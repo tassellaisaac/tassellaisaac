@@ -1,178 +1,121 @@
-One Million MEPs (OMM): A Database of Human Muscle Responses to Brain Stimulation
-Project Overview
-The One Million MEPs (OMM) project aims to build a comprehensive database of human motor-evoked potentials (MEPs) recorded via Transcranial Magnetic Stimulation (TMS). TMS is a non-invasive brain stimulation technique used to study the brain's role in motor control by generating electromagnetic pulses that stimulate neurons in the motor cortex. These stimulations elicit small muscle twitches, termed motor-evoked potentials (MEPs), which are recorded through surface electrodes.
+Burrows-Wheeler Transform (BWT) and Reverse BWT with Bit Calculator
+Description:
+This project implements the Burrows-Wheeler Transform (BWT) and its reverse operation (Reverse BWT) in R. The BWT is an important algorithm in bioinformatics, text compression, and sequence alignment. It rearranges a string into a form that is more compressible by clustering similar characters together. Additionally, this project includes a simple bit-calculator that estimates the number of bits required to store a given DNA sequence based on its length.
 
-This project collects, processes, and analyzes a large-scale dataset of MEPs, totaling around 1 million MEP responses. The goal is to standardize the MEP data into a common format and to provide tools for statistical analysis and data visualization to the neuroscience research community.
+The project processes a set of DNA sequences, computes the BWT, reverses the BWT to verify correctness, and calculates the bit storage requirements for each sequence.
 
-The One Million MEPs (OMM) database contributes to the NIBS-BIDS (Non-invasive Brain Stimulation Brain Imaging Data Structure) standard, enabling easier data sharing and reproducibility in research.
+Project Structure and Functions
+Main Functions
+bwt(sequence): Computes the Burrows-Wheeler Transform of the input sequence.
+reverse_bwt(bwt_seq): Reconstructs the original sequence from the BWT result.
+bit_calculator(sequence): Calculates the number of bits required to store the sequence.
+test_sequences(sequences): Runs the BWT, Reverse BWT, and bit calculator for a list of sequences.
 
-Project Goals
-Collating MEP Data: Process around 1 million MEP responses from various experiments into an annotated database.
-Standardization: Convert the MEP data into a standard JSON format compatible with the NIBS-BIDS project for open sharing.
-Statistical Analysis: Provide R scripts for the statistical analysis of MEP data, including t-tests, ANOVA, and other methods to study MEP response patterns.
-Visualization: Develop graphical representations of MEP distributions and comparisons across different experimental conditions.
-Data Export: Enable exporting the processed MEP data to JSON for easy sharing and standardization.
+Limitations and Future Enhancements
+End-of-string marker: The program assumes the presence of the end-of-string marker ($) for proper BWT functionality. The marker is automatically added when testing sequences.
+Optimizations: While the current implementation works for small sequences, future optimizations could improve performance for longer sequences or large datasets.
+Bit Calculation: The bit calculation assumes 2 bits per character, which is typical for nucleotides, but could be adjusted for different encoding schemes.
 
-# preprocess_data.R
-# Import libraries
-library(dplyr)
-library(tidyr)
-
-# Load raw data
-load_mep_data <- function(file_path) {
-  data <- read.csv(file_path)
-  return(data)
+# Function to calculate the Burrows-Wheeler Transform (BWT)
+bwt <- function(sequence) {
+  n <- nchar(sequence)
+  # Create a list of cyclic shifts of the sequence
+  rotations <- sapply(0:(n-1), function(i) {
+    substring(sequence, i + 1, n) + substring(sequence, 1, i)
+  })
+  
+  # Sort the rotations lexicographically
+  sorted_rotations <- sort(rotations)
+  
+  # The BWT is the last column of the sorted rotations
+  bwt_result <- paste0(sapply(sorted_rotations, function(x) substring(x, n, n)), collapse = "")
+  
+  return(bwt_result)
 }
 
-# Preprocess and clean the data
-preprocess_mep_data <- function(data) {
-  # Handle missing values (replace missing MEP responses with NA)
-  data_clean <- data %>% drop_na()
-
-  # Normalize the MEP amplitude data (assuming 'amplitude' is a column)
-  data_clean <- data_clean %>%
-    mutate(amplitude_normalized = (amplitude - min(amplitude)) / (max(amplitude) - min(amplitude)))
-
-  # Filter out noisy or erroneous data (e.g., amplitude below a noise threshold)
-  data_clean <- data_clean %>%
-    filter(amplitude_normalized > 0.1)  # Example threshold
+# Function to calculate Reverse Burrows-Wheeler Transform (Reverse BWT)
+reverse_bwt <- function(bwt_seq) {
+  n <- nchar(bwt_seq)
   
-  return(data_clean)
+  # Initialize an empty matrix to hold the sorted characters
+  table <- rep("", n)
+  
+  # Repeat the following steps n times
+  for (i in 1:n) {
+    # Prepend the BWT characters to the rows of the table
+    table <- paste0(substring(bwt_seq, 1:n, 1:n), table)
+    
+    # Sort the table lexicographically
+    table <- sort(table)
+  }
+  
+  # Find the row that ends with the end-of-string character '$'
+  for (row in table) {
+    if (substring(row, n, n) == "$") {
+      # Remove the end-of-string character and return the original sequence
+      return(substring(row, 1, n-1))
+    }
+  }
 }
 
-# Save the cleaned data to CSV
-save_clean_data <- function(data, output_path) {
-  write.csv(data, file = output_path, row.names = FALSE)
+# Function to calculate the number of bits required to store a sequence
+bit_calculator <- function(sequence) {
+  n <- nchar(sequence)
+  # Each character requires 2 bits (assuming 4 nucleotides A, T, C, G)
+  return(2 * n)
 }
 
-# Main function to load, preprocess, and save the cleaned data
-main_preprocessing <- function() {
-  # Load raw data
-  raw_data <- load_mep_data("../data/raw_meps.csv")
-  
-  # Preprocess the data
-  cleaned_data <- preprocess_mep_data(raw_data)
-  
-  # Save the cleaned data
-  save_clean_data(cleaned_data, "../data/cleaned_meps.csv")
-  
-  print("Data preprocessing completed!")
+# Function to test forward and backward BWT and bit calculations
+test_sequences <- function(sequences) {
+  for (seq in sequences) {
+    cat("Original Sequence: ", seq, "\n")
+    
+    # Add an end-of-string marker "$" to the sequence
+    seq_with_marker <- paste0(seq, "$")
+    
+    # Perform BWT
+    bwt_result <- bwt(seq_with_marker)
+    cat("BWT: ", bwt_result, "\n")
+    
+    # Reverse the BWT to get the original sequence
+    reversed_seq <- reverse_bwt(bwt_result)
+    cat("Reconstructed Sequence: ", reversed_seq, "\n")
+    
+    # Calculate the number of bits required to store the sequence
+    bits <- bit_calculator(seq)
+    cat("Bits Required: ", bits, "\n")
+    
+    # Add some separation between results for each sequence
+    cat("------------------------------------------------------\n")
+  }
 }
 
-# Run preprocessing
-main_preprocessing()
-# analysis.R
-# Import libraries
-library(dplyr)
+# Test the function with the given sequences
+sequences <- c(
+  "GATTACA",
+  "ATTACATTAC",
+  "ATATATATATA",
+  "ATATATATAT",
+  "AATAATAATAAT",
+  "AAAATAAATAAA",
+  "ATATACACACA",
+  "ATATGTATACAT"
+)
 
-# Perform t-test and ANOVA
-analyze_mep_data <- function(data) {
-  # T-test: comparing two conditions (e.g., high vs low stimulation intensity)
-  t_test_result <- t.test(amplitude_normalized ~ condition, data = data)
-  print("T-Test Result:")
-  print(t_test_result)
-  
-  # ANOVA: comparing multiple conditions
-  aov_result <- aov(amplitude_normalized ~ condition, data = data)
-  print("ANOVA Result:")
-  print(summary(aov_result))
-  
-  return(list(t_test = t_test_result, aov = aov_result))
-}
-
-# Save statistical analysis results to file
-save_analysis_results <- function(t_test_result, aov_result, output_file) {
-  write(paste("T-Test Result:\n", capture.output(t_test_result), "\n\nANOVA Result:\n", capture.output(summary(aov_result))),
-        file = output_file)
-}
-
-# Main function to perform analysis
-main_analysis <- function() {
-  # Load cleaned data
-  cleaned_data <- read.csv("../data/cleaned_meps.csv")
-  
-  # Perform statistical analysis
-  results <- analyze_mep_data(cleaned_data)
-  
-  # Save results to a file
-  save_analysis_results(results$t_test, results$aov, "../data/analysis_results.txt")
-  
-  print("Statistical analysis completed!")
-}
-
-# Run analysis
-main_analysis()
-# visualization.R
-# Import libraries
-library(ggplot2)
-library(dplyr)
-
-# Plot MEP amplitude distribution
-plot_mep_distribution <- function(data) {
-  plot <- ggplot(data, aes(x = amplitude_normalized, fill = condition)) +
-    geom_histogram(alpha = 0.6, position = "identity", bins = 30) +
-    labs(title = "Distribution of MEP Amplitudes", x = "Normalized MEP Amplitude", y = "Frequency") +
-    theme_minimal()
-  
-  return(plot)
-}
-
-# Plot MEP amplitude comparison between conditions
-plot_group_comparison <- function(data) {
-  plot <- ggplot(data, aes(x = condition, y = amplitude_normalized, fill = condition)) +
-    geom_boxplot() +
-    labs(title = "Comparison of MEP Amplitudes Between Conditions", x = "Condition", y = "Normalized MEP Amplitude") +
-    theme_minimal()
-  
-  return(plot)
-}
-
-# Save plots to files
-save_plot <- function(plot, output_path) {
-  ggsave(output_path, plot = plot, width = 8, height = 6)
-}
-
-# Main function to generate and save visualizations
-main_visualization <- function() {
-  # Load cleaned data
-  cleaned_data <- read.csv("../data/cleaned_meps.csv")
-  
-  # Generate and save MEP amplitude distribution plot
-  dist_plot <- plot_mep_distribution(cleaned_data)
-  save_plot(dist_plot, "../figures/mep_distribution.png")
-  
-  # Generate and save MEP amplitude comparison plot
-  comparison_plot <- plot_group_comparison(cleaned_data)
-  save_plot(comparison_plot, "../figures/mep_group_comparison.png")
-  
-  print("Data visualizations created and saved!")
-}
-
-# Run visualization
-main_visualization()
-# export_json.R
-# Import libraries
-library(jsonlite)
-library(dplyr)
-
-# Convert MEP data to JSON format
-export_mep_to_json <- function(data, output_path) {
-  json_data <- toJSON(data, pretty = TRUE, auto_unbox = TRUE)
-  
-  # Save JSON to file
-  write(json_data, file = output_path)
-}
-
-# Main function to load cleaned data and export it to JSON
-main_export_json <- function() {
-  # Load cleaned data
-  cleaned_data <- read.csv("../data/cleaned_meps.csv")
-  
-  # Export data to JSON format
-  export_mep_to_json(cleaned_data, "../data/mep_data.json")
-  
-  print("MEP data exported to JSON format!")
-}
-
-# Run JSON export
-main_export_json()
+test_sequences(sequences)
+Original Sequence:  GATTACA
+BWT:  ACT$GAAT
+Reconstructed Sequence:  GATTACA
+Bits Required:  14
+------------------------------------------------------
+Original Sequence:  ATTACATTAC
+BWT:  CCTTAAAT$AC
+Reconstructed Sequence:  ATTACATTAC
+Bits Required:  20
+------------------------------------------------------
+Original Sequence:  ATATATATATA
+BWT:  TTTTTAAAAAA$
+Reconstructed Sequence:  ATATATATATA
+Bits Required:  24
+------------------------------------------------------
+...
