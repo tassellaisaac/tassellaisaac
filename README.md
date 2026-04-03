@@ -1,8 +1,8 @@
 👋 Hi, I’m @tassellaisaac
 
-	•	👀 I’m interested in bioinformatics, oncology, and precision medicine.
-	•	🌱 I’m currently learning data mining and exploring various approaches to mapping and alignment of sequence data.
-	•	💞️ I’m looking to collaborate on bioinformatics projects, particularly those focused on cancer research and multi-omics integration.
-	•	📫 How to reach me: tassella.isaac@gmail.com.
-	•	😄 Pronouns: She/Her
-	•	⚡ Fun fact: I love reading and I’m a passionate coffee enthusiast! ☕️📚
+🔬 Research Assistant at University of Cambridge (AI + population health)
+🧠 Working on multimorbidity, clinical coding (SNOMED/READ/ICD-10), and large-scale EHR data (CPRD, HES)
+🤖 Using machine learning (XGBoost, SHAP) for risk modelling and health inequalities research
+🌱 Exploring data mining and sequence mapping/alignment in bioinformatics
+💞️ Open to collaborations in oncology, multi-omics, and AI in healthcare
+📫 tassella.isaac@gmail.com | ☕ Coffee + 📚 reading
